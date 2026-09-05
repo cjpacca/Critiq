@@ -1,0 +1,373 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name          String?
+  emailVerified DateTime?
+  image         String?
+  email     String?   @unique
+  username  String   @unique
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  seriesRatings  SeriesRating[]
+  movieRatings   MovieRating[]
+  gameRatings    GameRating[]
+  musicRatings   MusicRating[]
+  bookRatings    BookRating[]
+  episodeRatings EpisodeRating[]
+  albumRatings   AlbumTrackRating[]
+  accounts      Account[]
+  sessions      Session[]
+  friendships   Friendship[] @relation("UserFriendships")
+  friendOf      Friendship[] @relation("FriendUser")
+}
+
+// ----------------------------------------------------
+// MODELOS DE MEDIOS (Con JSONB para toda la API extra)
+// ----------------------------------------------------
+
+model Series {
+  id           String   @id @default(uuid())
+  tmdbId       Int      @unique
+  title        String
+  posterUrl    String?
+  releaseDate  DateTime?
+  raw_metadata Json?    
+  createdAt    DateTime @default(now())
+
+  ratings      SeriesRating[]
+  episodes     EpisodeRating[]
+}
+
+model Movie {
+  id           String   @id @default(uuid())
+  tmdbId       Int      @unique
+  title        String
+  posterUrl    String?
+  releaseDate  DateTime?
+  raw_metadata Json?    
+  createdAt    DateTime @default(now())
+
+  ratings      MovieRating[]
+}
+
+model Game {
+  id           String   @id @default(uuid())
+  rawgId       String   @unique
+  title        String
+  posterUrl    String?
+  releaseDate  DateTime?
+  raw_metadata Json?    
+  createdAt    DateTime @default(now())
+
+  ratings      GameRating[]
+}
+
+model Music {
+  id           String   @id @default(uuid())
+  spotifyId    String   @unique
+  title        String   
+  type         String   // "album" o "track"
+  artist       String
+  posterUrl    String?
+  releaseDate  DateTime?
+  raw_metadata Json?    
+  createdAt    DateTime @default(now())
+
+  ratings      MusicRating[]
+  trackRatings AlbumTrackRating[]
+}
+
+model Book {
+  id           String   @id @default(uuid())
+  googleId     String   @unique 
+  title        String
+  author       String
+  posterUrl    String?
+  releaseDate  DateTime?
+  raw_metadata Json?    
+  createdAt    DateTime @default(now())
+
+  ratings      BookRating[]
+}
+
+// ----------------------------------------------------
+// MODELOS DE VALORACIONES (Sistema 1000 pts)
+// ----------------------------------------------------
+
+model SeriesRating {
+  id           String   @id @default(uuid())
+  userId       String
+  seriesId     String
+  
+  // Categorías (Max 1000)
+  enganche     Int      // Max 150
+  personajes   Int      // Max 150
+  impacto      Int      // Max 100
+  diversion    Int      // Max 150
+  trama        Int      // Max 100
+  historia     Int      // Max 100
+  final        Int      // Max 75
+  ritmo        Int      // Max 75
+  soundtrack   Int      // Max 50
+  escenografia Int      // Max 50
+  
+  totalScore   Int
+
+
+  // Fase 8: Metadatos Extendidos
+  status       String?  @default("Completado")
+  startDate    DateTime?
+  endDate      DateTime?
+  replayCount  Int?     @default(0)
+  bingeDays     Int?
+  viewingMedium String?
+  dropPoint     String?
+  companions    String?
+  review       String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  series       Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, seriesId])
+}
+
+// Seguimiento por Capítulo para el Seriesgraph
+model EpisodeRating {
+  id           String   @id @default(uuid())
+  userId       String
+  seriesId     String
+  seasonNum    Int
+  episodeNum   Int
+  score        Int      
+  review       String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  series       Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, seriesId, seasonNum, episodeNum])
+}
+
+model MovieRating {
+  id           String   @id @default(uuid())
+  userId       String
+  movieId      String
+  
+  inmersion    Int      // Max 150
+  impacto      Int      // Max 150
+  ritmo        Int      // Max 100
+  personajes   Int      // Max 150
+  rewatch      Int      // Max 100
+  satisfaccion Int      // Max 100
+  audiovisual  Int      // Max 100
+  trama        Int      // Max 150
+  
+  totalScore   Int      
+
+  // Fase 8: Metadatos Extendidos
+  status       String?  @default("Completado")
+  startDate    DateTime?
+  endDate      DateTime?
+  replayCount  Int?     @default(0)
+  bingeDays     Int?
+  viewingMedium String?
+  companions    String?
+  review       String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie        Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+}
+
+model BookRating {
+  id                 String   @id @default(uuid())
+  userId             String
+  bookId             String
+  
+  adiccion           Int      // Max 200
+  conexionPersonajes Int      // Max 175
+  fluidezLectura     Int      // Max 125
+  historia           Int      // Max 125
+  mundo              Int      // Max 75
+  ritmo              Int      // Max 100
+  impacto            Int      // Max 100
+  final              Int      // Max 100
+  
+  totalScore         Int      
+
+  // Fase 8: Metadatos Extendidos
+  status       String?  @default("Completado")
+  startDate    DateTime?
+  endDate      DateTime?
+  replayCount  Int?     @default(0)
+  totalPages    Int?
+  pagesPerDay   Float?
+  bookFormat    String?
+  language      String?
+  review             String?  @db.Text
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book               Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bookId])
+}
+
+model MusicRating {
+  id                String   @id @default(uuid())
+  userId            String
+  musicId           String
+  
+  impactoEmocional  Int      // Max 250
+  replay            Int      // Max 200
+  melodia           Int      // Max 200
+  letra             Int      // Max 150
+  vocesInstrumental Int      // Max 100
+  originalidad      Int      // Max 100
+  
+  totalScore        Int      
+
+  // Fase 8: Metadatos Extendidos
+  status       String?  @default("Completado")
+  startDate    DateTime?
+  endDate      DateTime?
+  replayCount  Int?     @default(0)
+  playCount      Int?
+  bpm            Int?
+  valence        String?
+  discoveryMonth DateTime?
+  review            String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  music             Music    @relation(fields: [musicId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, musicId])
+}
+
+model GameRating {
+  id                 String   @id @default(uuid())
+  userId             String
+  gameId             String
+  
+  jugabilidad        Int      // Max 100
+  adiccion           Int      // Max 100
+  disenoNiveles      Int      // Max 75
+  arteEstetica       Int      // Max 75
+  historia           Int      // Max 75
+  inmersion          Int      // Max 75
+  sonido             Int      // Max 75
+  impacto            Int      // Max 75
+  dificultad         Int      // Max 50
+  rejugabilidad      Int      // Max 50
+  rendimiento        Int      // Max 50
+  conexionPersonajes Int      // Max 50
+  detalle            Int      // Max 50
+  mecanicas          Int      // Max 50
+  ia                 Int      // Max 50
+  
+  totalScore         Int      
+
+  // Fase 8: Metadatos Extendidos
+  status       String?  @default("Completado")
+  startDate    DateTime?
+  endDate      DateTime?
+  replayCount  Int?     @default(0)
+  playtimeHours   Float?
+  completionTier  String?
+  platform        String?
+  playDays        Int?
+  difficulty_meta String?
+  achievementsPct Int?
+  review             String?  @db.Text
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game               Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+}
+
+model AlbumTrackRating {
+  id           String   @id @default(uuid())
+  userId       String
+  albumId      String
+  trackNum     Int
+  score        Int      
+  review       String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  album        Music    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, albumId, trackNum])
+}
+
+// NextAuth Models
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Friendship {
+  id        String   @id @default(uuid())
+  userId    String
+  friendId  String
+  createdAt DateTime @default(now())
+
+  user      User     @relation("UserFriendships", fields: [userId], references: [id], onDelete: Cascade)
+  friend    User     @relation("FriendUser", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+}
