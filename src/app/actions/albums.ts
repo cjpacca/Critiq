@@ -28,7 +28,7 @@ export async function saveAlbumTrackRating(albumId: string, trackNum: number, sc
           artist: albumData.artists[0]?.name || "Unknown Artist",
           posterUrl: albumData.posterUrl,
           releaseDate: albumData.release_date ? new Date(albumData.release_date) : null,
-          raw_metadata: albumData.raw_metadata
+          raw_metadata: albumData.raw_metadata ? JSON.stringify(albumData.raw_metadata) : null
         }
       });
     }

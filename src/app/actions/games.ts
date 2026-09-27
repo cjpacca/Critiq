@@ -73,10 +73,8 @@ export async function getGameDetails(id: string) {
     posterUrl: item.assets?.["cover-large"]?.uri || "",
     year: item.released ? item.released.toString() : "Unknown",
     description: `Videojuego oficial lanzado en ${item.released}.`,
-    raw_metadata: {
-      ...item,
+    raw_metadata: JSON.stringify({...item,
       enriched_developer: extra?.developer || null,
-      enriched_genre: extra?.genre || null
-    }
+      enriched_genre: extra?.genre || null})
   };
 }

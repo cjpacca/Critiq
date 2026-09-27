@@ -27,7 +27,7 @@ export async function saveEpisodeRating(tmdbId: string, seasonNum: number, episo
           title: mediaData.name || "Unknown TV Show",
           posterUrl: mediaData.poster_path ? `https://image.tmdb.org/t/p/w780${mediaData.poster_path}` : "",
           releaseDate: mediaData.first_air_date ? new Date(mediaData.first_air_date) : null,
-          raw_metadata: mediaData
+          raw_metadata: mediaData ? JSON.stringify(mediaData) : null
         }
       });
     }

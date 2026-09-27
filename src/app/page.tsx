@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 import { Film, Tv, Gamepad2, Music, BookOpen, Star } from "lucide-react";
 import { RankingColumn } from "@/components/RankingColumn";
+import { ActivityHeatmap } from "@/components/ActivityHeatmap";
 
 export const revalidate = 0; // Datos frescos siempre
 
@@ -9,7 +10,8 @@ export default async function Home() {
     const [
     seriesCount, moviesCount, musicCount, bookCount, gameCount,
     topMovies, topSeries, topMusic, topBooks, topGames,
-    gameStats, bookStats, seriesStats, movieStats, musicStats
+    gameStats, bookStats, seriesStats, movieStats, musicStats,
+    mDates, sDates, gDates, bDates, muDates, epDates, trDates
   ] = await Promise.all([
     prisma.seriesRating.count(),
     prisma.movieRating.count(),
@@ -27,8 +29,19 @@ export default async function Home() {
     prisma.bookRating.aggregate({ _sum: { totalPages: true }, _avg: { totalScore: true } }),
     prisma.seriesRating.aggregate({ _sum: { bingeDays: true }, _avg: { totalScore: true } }),
     prisma.movieRating.aggregate({ _avg: { totalScore: true } }),
-    prisma.musicRating.aggregate({ _avg: { totalScore: true } })
+    prisma.musicRating.aggregate({ _avg: { totalScore: true } }),
+    prisma.movieRating.findMany({ select: { createdAt: true } }),
+    prisma.seriesRating.findMany({ select: { createdAt: true } }),
+    prisma.gameRating.findMany({ select: { createdAt: true } }),
+    prisma.bookRating.findMany({ select: { createdAt: true } }),
+    prisma.musicRating.findMany({ select: { createdAt: true } }),
+    prisma.episodeRating.findMany({ select: { createdAt: true } }),
+    prisma.albumTrackRating.findMany({ select: { createdAt: true } })
   ]);
+
+  const allDates = [...mDates, ...sDates, ...gDates, ...bDates, ...muDates, ...epDates, ...trDates];
+  const activityData = allDates.map(d => ({ date: d.createdAt.toISOString(), count: 1 }));
+
 
   // Colores distintivos por módulo
   const mediaColors = {
@@ -108,6 +121,11 @@ export default async function Home() {
             </div>
           )
         })}
+      </section>
+
+      {/* Heatmap Global */}
+      <section className="mb-8 w-full">
+        <ActivityHeatmap activityData={activityData} />
       </section>
 
       {/* Leaderboards Espectaculares */}

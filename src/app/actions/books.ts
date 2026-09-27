@@ -48,6 +48,6 @@ export async function getBookDetails(id: string) {
     author,
     description,
     posterUrl: data.covers && data.covers.length > 0 ? `https://covers.openlibrary.org/b/id/${data.covers[0]}-L.jpg` : "",
-    raw_metadata: data
+    raw_metadata: data ? JSON.stringify(data) : null
   };
 }

@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import { getTvSeasonDetails } from "@/app/actions/tmdb";
 import { saveEpisodeRating } from "@/app/actions/episodes";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Loader2, Check } from "lucide-react";
+import { Loader2, Check, Save } from "lucide-react";
 
 const SCORE_COLORS = [
   [239, 68, 68],   // 0: Rojo oscuro
@@ -118,8 +118,27 @@ export function SeasonChartUI({ tmdbId, seasons, pastRatings }: { tmdbId: string
   const maxEpisodes = Math.max(...validSeasons.map(s => s.episode_count || 0), 1);
   const rows = Array.from({ length: maxEpisodes }, (_, i) => i + 1);
 
+  // Calcular promedio de la serie completa
+  const ratedEpisodes = Object.values(ratings);
+  const seriesAverage = ratedEpisodes.length > 0 
+    ? (ratedEpisodes.reduce((a, b) => a + b, 0) / ratedEpisodes.length).toFixed(2)
+    : "0.00";
+
   return (
     <div className="flex flex-col gap-8">
+      {/* Promedio General */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 mix-blend-overlay" />
+        <div className="relative z-10">
+          <h2 className="text-sm font-bold text-blue-400 uppercase tracking-widest mb-1">Nota Media Global</h2>
+          <p className="text-neutral-400 text-sm">Basado en {ratedEpisodes.length} episodios valorados</p>
+        </div>
+        <div className="relative z-10 flex items-baseline gap-2 bg-black/50 px-6 py-3 rounded-xl border border-white/10 shadow-inner">
+          <span className="text-4xl font-black text-white">{seriesAverage}</span>
+          <span className="text-xl font-bold text-neutral-500">/ 10</span>
+        </div>
+      </div>
+
       {/* Selector de Temporadas */}
       <div className="flex flex-wrap gap-2">
         {validSeasons.map(s => (
@@ -224,9 +243,24 @@ export function SeasonChartUI({ tmdbId, seasons, pastRatings }: { tmdbId: string
                       
                       <button
                         onClick={() => saveRating(ep.episode_number)}
-                        className="bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-lg transition-colors flex items-center justify-center w-10 h-10 shrink-0"
+                        disabled={isSaving}
+                        className={`transition-all duration-300 flex items-center justify-center h-10 px-3 rounded-lg font-bold text-sm shrink-0 ${
+                          isSaving 
+                            ? 'bg-green-500 text-black shadow-[0_0_15px_rgba(34,197,94,0.5)] scale-105' 
+                            : 'bg-white/10 hover:bg-blue-600 text-white'
+                        }`}
                       >
-                        {isSaving ? <Check size={18} /> : '✓'}
+                        {isSaving ? (
+                          <>
+                            <Check size={16} className="mr-1" />
+                            Guardado
+                          </>
+                        ) : (
+                          <>
+                            <Save size={16} className="mr-1 opacity-50" />
+                            Guardar
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>

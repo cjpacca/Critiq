@@ -3,9 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "sqlite"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  
 }
 
 model User {
@@ -26,9 +26,7 @@ model User {
   bookRatings    BookRating[]
   episodeRatings EpisodeRating[]
   albumRatings   AlbumTrackRating[]
-  accounts      Account[]
-  sessions      Session[]
-  friendships   Friendship[] @relation("UserFriendships")
+      friendships   Friendship[] @relation("UserFriendships")
   friendOf      Friendship[] @relation("FriendUser")
 }
 
@@ -42,7 +40,7 @@ model Series {
   title        String
   posterUrl    String?
   releaseDate  DateTime?
-  raw_metadata Json?    
+  raw_metadata String?    
   createdAt    DateTime @default(now())
 
   ratings      SeriesRating[]
@@ -55,7 +53,7 @@ model Movie {
   title        String
   posterUrl    String?
   releaseDate  DateTime?
-  raw_metadata Json?    
+  raw_metadata String?    
   createdAt    DateTime @default(now())
 
   ratings      MovieRating[]
@@ -67,7 +65,7 @@ model Game {
   title        String
   posterUrl    String?
   releaseDate  DateTime?
-  raw_metadata Json?    
+  raw_metadata String?    
   createdAt    DateTime @default(now())
 
   ratings      GameRating[]
@@ -81,7 +79,7 @@ model Music {
   artist       String
   posterUrl    String?
   releaseDate  DateTime?
-  raw_metadata Json?    
+  raw_metadata String?    
   createdAt    DateTime @default(now())
 
   ratings      MusicRating[]
@@ -95,7 +93,7 @@ model Book {
   author       String
   posterUrl    String?
   releaseDate  DateTime?
-  raw_metadata Json?    
+  raw_metadata String?    
   createdAt    DateTime @default(now())
 
   ratings      BookRating[]
@@ -124,7 +122,6 @@ model SeriesRating {
   
   totalScore   Int
 
-
   // Fase 8: Metadatos Extendidos
   status       String?  @default("Completado")
   startDate    DateTime?
@@ -134,7 +131,7 @@ model SeriesRating {
   viewingMedium String?
   dropPoint     String?
   companions    String?
-  review       String?  @db.Text
+  review       String?  
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -152,7 +149,7 @@ model EpisodeRating {
   seasonNum    Int
   episodeNum   Int
   score        Int      
-  review       String?  @db.Text
+  review       String?  
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -186,7 +183,7 @@ model MovieRating {
   bingeDays     Int?
   viewingMedium String?
   companions    String?
-  review       String?  @db.Text
+  review       String?  
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -221,7 +218,7 @@ model BookRating {
   pagesPerDay   Float?
   bookFormat    String?
   language      String?
-  review             String?  @db.Text
+  review             String?  
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -254,7 +251,7 @@ model MusicRating {
   bpm            Int?
   valence        String?
   discoveryMonth DateTime?
-  review            String?  @db.Text
+  review            String?  
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -298,7 +295,7 @@ model GameRating {
   playDays        Int?
   difficulty_meta String?
   achievementsPct Int?
-  review             String?  @db.Text
+  review             String?  
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -314,7 +311,7 @@ model AlbumTrackRating {
   albumId      String
   trackNum     Int
   score        Int      
-  review       String?  @db.Text
+  review       String?  
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -322,42 +319,6 @@ model AlbumTrackRating {
   album        Music    @relation(fields: [albumId], references: [id], onDelete: Cascade)
 
   @@unique([userId, albumId, trackNum])
-}
-
-// NextAuth Models
-model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
 }
 
 model Friendship {

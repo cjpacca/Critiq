@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Award, Trophy, Crown } from "lucide-react";
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
 import { useRouter } from "next/navigation";
 import { saveRating } from "@/app/actions/ratings";
 
@@ -131,6 +132,51 @@ export function RatingForm({ type, mediaId, mediaData }: { type: 'movie'|'tv'|'t
     }
   };
 
+  const radarData = categories.map(cat => ({
+    subject: cat.label,
+    A: ((scores[cat.id] || 0) / cat.max) * 100,
+    fullMark: 100
+  }));
+
+  const colorHex = type === 'movie' ? '#a855f7' : type === 'tv' ? '#3b82f6' : type === 'track' ? '#eab308' : type === 'game' ? '#22c55e' : '#f97316';
+
+
+  const getMedalStyles = (tier: string) => {
+    if (tier === '100% / Platino') {
+      return {
+        Icon: Crown,
+        color: 'text-cyan-100',
+        bg: 'bg-gradient-to-br from-cyan-300 via-blue-500 to-purple-600',
+        border: 'border-cyan-200',
+        glow: 'shadow-[0_0_40px_rgba(34,211,238,0.7)] animate-pulse',
+        label: 'PLATINO PERFECTO'
+      };
+    }
+    if (tier === 'Historia + Extras') {
+      return {
+        Icon: Trophy,
+        color: 'text-yellow-100',
+        bg: 'bg-gradient-to-br from-yellow-300 via-amber-500 to-orange-600',
+        border: 'border-yellow-200',
+        glow: 'shadow-[0_0_25px_rgba(250,204,21,0.6)]',
+        label: 'ORO (EXTRAS)'
+      };
+    }
+    if (tier === 'Solo Historia') {
+      return {
+        Icon: Award,
+        color: 'text-slate-100',
+        bg: 'bg-gradient-to-br from-slate-300 via-slate-500 to-slate-700',
+        border: 'border-slate-300',
+        glow: 'shadow-[0_0_15px_rgba(148,163,184,0.4)]',
+        label: 'PLATA (HISTORIA)'
+      };
+    }
+    return null;
+  };
+
+  const medal = type === 'game' ? getMedalStyles(extendedStats.completionTier) : null;
+
   return (
     <form onSubmit={handleSave} className="glass-card p-8 flex flex-col gap-8">
       {/* Marcador Total */}
@@ -139,6 +185,19 @@ export function RatingForm({ type, mediaId, mediaData }: { type: 'movie'|'tv'|'t
           <h3 className="text-xl font-bold text-neutral-300">Puntaje Final</h3>
           <p className="text-sm text-neutral-500">Calculado automáticamente</p>
         </div>
+        
+        {/* Medalla de Completismo (Juegos) */}
+        {medal && (
+          <div className="hidden sm:flex flex-col items-center justify-center animate-in zoom-in duration-500">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 ${medal.bg} ${medal.border} ${medal.glow} transition-all duration-500 hover:scale-110 cursor-pointer`}>
+              <medal.Icon size={32} className={`${medal.color} drop-shadow-md`} />
+            </div>
+            <span className={`mt-2 text-[10px] font-black uppercase tracking-widest ${medal.color} bg-black/50 px-2 py-0.5 rounded-full border border-white/10`}>
+              {medal.label}
+            </span>
+          </div>
+        )}
+
         <div className="text-right">
           <span className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-400">
             {totalScore}
@@ -147,26 +206,65 @@ export function RatingForm({ type, mediaId, mediaData }: { type: 'movie'|'tv'|'t
         </div>
       </div>
 
-      {/* Sliders de Categorías */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-        {categories.map((cat) => (
-          <div key={cat.id} className="flex flex-col gap-3">
-            <div className="flex justify-between items-center">
-              <label className="text-white font-medium">{cat.label}</label>
-              <span className="bg-white/10 px-3 py-1 rounded-lg text-sm font-bold font-mono text-white">
-                {scores[cat.id]} <span className="text-neutral-500 text-xs">/ {cat.max}</span>
-              </span>
+      {/* Contenedor Principal: Sliders + Radar */}
+      <div className="flex flex-col xl:flex-row gap-8 items-center xl:items-stretch">
+        
+        {/* Sliders de Categorías */}
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8 w-full">
+          {categories.map((cat) => (
+            <div key={cat.id} className="flex flex-col gap-3">
+              <div className="flex justify-between items-center">
+                <label className="text-white font-medium">{cat.label}</label>
+                <span className="bg-white/10 px-3 py-1 rounded-lg text-sm font-bold font-mono text-white">
+                  {scores[cat.id]} <span className="text-neutral-500 text-xs">/ {cat.max}</span>
+                </span>
+              </div>
+              <input 
+                type="range" 
+                min="0" 
+                max={cat.max} 
+                value={scores[cat.id]} 
+                onChange={(e) => handleScoreChange(cat.id, parseInt(e.target.value))}
+                className={`w-full ${accentColor} h-2 bg-neutral-800 rounded-lg appearance-none cursor-pointer`}
+              />
             </div>
-            <input 
-              type="range" 
-              min="0" 
-              max={cat.max} 
-              value={scores[cat.id]} 
-              onChange={(e) => handleScoreChange(cat.id, parseInt(e.target.value))}
-              className={`w-full ${accentColor} h-2 bg-neutral-800 rounded-lg appearance-none cursor-pointer`}
-            />
+          ))}
+        </div>
+
+        {/* Radar Chart (Spider Chart) */}
+        <div className="w-full xl:w-[450px] aspect-square xl:aspect-auto bg-black/40 border border-white/5 rounded-3xl flex items-center justify-center p-4 shadow-inner relative overflow-hidden group">
+          <div className="absolute top-4 left-5 z-10">
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-neutral-500 group-hover:text-white transition-colors">Huella Digital (Spider Chart)</h4>
           </div>
-        ))}
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-white/5 mix-blend-overlay pointer-events-none" />
+          
+          <ResponsiveContainer width="100%" height="100%" minHeight={300}>
+            <RadarChart cx="50%" cy="50%" outerRadius="65%" data={radarData}>
+              <PolarGrid stroke="rgba(255,255,255,0.05)" />
+              <PolarAngleAxis 
+                dataKey="subject" 
+                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 'bold' }} 
+              />
+              <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+              <RechartsTooltip 
+                contentStyle={{ backgroundColor: 'rgba(0,0,0,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', backdropFilter: 'blur(10px)' }}
+                itemStyle={{ color: colorHex, fontWeight: 'black', fontSize: '16px' }}
+                formatter={(value: any) => [`${Math.round(value)}%`, 'Fuerza del atributo']}
+                labelStyle={{ display: 'none' }}
+              />
+              <Radar 
+                name="Fuerza" 
+                dataKey="A" 
+                stroke={colorHex} 
+                strokeWidth={3}
+                fill={colorHex} 
+                fillOpacity={0.25} 
+                activeDot={{ r: 6, fill: '#fff', stroke: colorHex, strokeWidth: 2 }}
+              />
+            </RadarChart>
+          </ResponsiveContainer>
+        </div>
+
       </div>
 
       <div className="mt-4">

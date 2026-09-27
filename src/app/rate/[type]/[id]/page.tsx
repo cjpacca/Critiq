@@ -43,15 +43,15 @@ export default async function RatePage({ params }: { params: Promise<{ type: 'mo
     year = ""; 
     description = media.description ? media.description.replace(/(<([^>]+)>)/gi, "").substring(0, 500) + "..." : `Libro escrito por ${media.author}.`;
     if (media.author && media.author !== "Autor desconocido") tags.push(media.author);
-    if (media.raw_metadata?.subjects?.length > 0) tags.push(media.raw_metadata.subjects[0]);
+    if ((typeof media?.raw_metadata === "string" ? JSON.parse(media.raw_metadata) : (media?.raw_metadata || {}))?.subjects?.length > 0) tags.push((typeof media?.raw_metadata === "string" ? JSON.parse(media.raw_metadata) : (media?.raw_metadata || {})).subjects[0]);
   } else if (type === 'game') {
     media = await getGameDetails(id);
     posterUrl = media.posterUrl || "";
     title = media.title;
     year = media.year;
     description = media.description;
-    if (media.raw_metadata?.enriched_developer) tags.push(`Desarrollador: ${media.raw_metadata.enriched_developer}`);
-    if (media.raw_metadata?.enriched_genre) tags.push(`Género: ${media.raw_metadata.enriched_genre}`);
+    if ((typeof media?.raw_metadata === "string" ? JSON.parse(media.raw_metadata) : (media?.raw_metadata || {}))?.enriched_developer) tags.push(`Desarrollador: ${(typeof media?.raw_metadata === "string" ? JSON.parse(media.raw_metadata) : (media?.raw_metadata || {})).enriched_developer}`);
+    if ((typeof media?.raw_metadata === "string" ? JSON.parse(media.raw_metadata) : (media?.raw_metadata || {}))?.enriched_genre) tags.push(`Género: ${(typeof media?.raw_metadata === "string" ? JSON.parse(media.raw_metadata) : (media?.raw_metadata || {})).enriched_genre}`);
   } else {
     media = await getMediaDetails(id, type);
     posterUrl = `https://image.tmdb.org/t/p/w780${media.poster_path}`;

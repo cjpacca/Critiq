@@ -34,7 +34,7 @@ export async function saveRating(type: 'movie' | 'tv' | 'track' | 'book' | 'game
           title: mediaData.title,
           posterUrl: mediaData.poster_path,
           releaseDate: mediaData.release_date ? new Date(mediaData.release_date) : null,
-          raw_metadata: mediaData
+          raw_metadata: mediaData ? JSON.stringify(mediaData) : null
         }
       });
 
@@ -69,7 +69,7 @@ export async function saveRating(type: 'movie' | 'tv' | 'track' | 'book' | 'game
           title: mediaData.name,
           posterUrl: mediaData.poster_path,
           releaseDate: mediaData.first_air_date ? new Date(mediaData.first_air_date) : null,
-          raw_metadata: mediaData
+          raw_metadata: mediaData ? JSON.stringify(mediaData) : null
         }
       });
 
@@ -115,7 +115,7 @@ export async function saveRating(type: 'movie' | 'tv' | 'track' | 'book' | 'game
           artist: mediaData.artists?.[0]?.name || "Unknown Artist",
           posterUrl: mediaData.album?.images?.[0]?.url || "",
           releaseDate: releaseDateParsed,
-          raw_metadata: mediaData
+          raw_metadata: mediaData ? JSON.stringify(mediaData) : null
         }
       });
 
@@ -150,7 +150,7 @@ export async function saveRating(type: 'movie' | 'tv' | 'track' | 'book' | 'game
           author: mediaData.author || "Unknown Author",
           posterUrl: mediaData.posterUrl || "",
           releaseDate: null,
-          raw_metadata: mediaData.raw_metadata || {}
+          raw_metadata: mediaData.raw_metadata ? (typeof mediaData.raw_metadata === "string" ? mediaData.raw_metadata : JSON.stringify(mediaData.raw_metadata)) : null,
         }
       });
 
@@ -186,7 +186,7 @@ export async function saveRating(type: 'movie' | 'tv' | 'track' | 'book' | 'game
           title: mediaData.title || "Unknown Game",
           posterUrl: mediaData.posterUrl || "",
           releaseDate: null,
-          raw_metadata: mediaData.raw_metadata || {}
+          raw_metadata: mediaData.raw_metadata ? (typeof mediaData.raw_metadata === "string" ? mediaData.raw_metadata : JSON.stringify(mediaData.raw_metadata)) : null,
         }
       });
 

@@ -17,7 +17,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean,
     <aside className={`fixed left-0 top-0 h-screen glass flex flex-col gap-8 z-50 py-8 border-r border-white/10 transition-all duration-300 ${isCollapsed ? 'w-20 px-3' : 'w-64 px-5'}`}>
       <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-2'}`}>
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="min-w-[32px] w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 shadow-lg" />
+          <img src="/icon.jpeg" alt="Critiq Logo" className="min-w-[32px] w-8 h-8 rounded-xl shadow-lg shadow-white/5 object-cover" />
           {!isCollapsed && <h1 className="text-2xl font-bold tracking-tighter text-white">Critiq</h1>}
         </div>
         <button onClick={() => setIsCollapsed(!isCollapsed)} className="p-1 hover:bg-white/10 rounded-lg text-neutral-400 hover:text-white transition-colors flex-shrink-0">

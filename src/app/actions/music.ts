@@ -84,7 +84,7 @@ export async function getAlbumTracks(collectionId: string) {
     artists: [{ name: albumInfo.artistName }],
     posterUrl: albumInfo.artworkUrl100?.replace("100x100bb", "600x600bb") || "",
     release_date: albumInfo.releaseDate,
-    raw_metadata: albumInfo,
+    raw_metadata: albumInfo ? JSON.stringify(albumInfo) : null,
     tracks: tracks.map((t: any) => ({
       id: t.trackId.toString(),
       name: t.trackName,
