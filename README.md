@@ -1,48 +1,52 @@
-# 🌌 Critiq (Local Desktop Edition)
+# Critiq 🌟
 
-> **A unified, highly-granular media tracker and social rating platform.**
+**Critiq** is a beautiful, blazing-fast, and 100% offline desktop application designed to be your ultimate personal media tracker. Rate, track, and visualize your journey through Movies, TV Shows, Video Games, Books, and Music.
 
-Critiq is a full-stack application designed to run entirely locally on your PC. It tracks, rates, and analyzes your favorite Movies, TV Shows, Video Games, Books, and Music Albums using a granular 1000-point scale. **All your data is saved privately on your hard drive** via an ultra-fast local SQLite database.
+Forget about cloud latency, servers, or subscriptions. Critiq runs entirely on your local machine using Electron and SQLite, keeping your data strictly yours.
 
 ## ✨ Features
 
-- **100% Local & Private:** No cloud dependencies, no accounts required. Everything stays on your machine.
-- **Universal Library:** Track Movies & TV (TMDB), Video Games (RAWG), Books (Google Books), and Music/Albums (iTunes).
-- **Granular Scoring System:** Rate media based on specific metrics (Cinematography, Gameplay, Immersion) to calculate a definitive score out of 1000.
-- **Advanced Personal Analytics:** Track your total gaming hours, binge-watching days, pages read, and global average scores across all mediums.
-- **Sequential Tracking:** Use *Seriesgraph* to track individual TV episodes, and *Trackgraph* to rate individual songs within an album.
-- **Dynamic UI:** Features a premium "Dark Glassmorphism" aesthetic with dynamic UI colors extracted directly from media posters using ColorThief.
+*   **Universal Tracking:** Unify your media consumption. Rate Movies, Series, Video Games, Books, Music Albums, and even individual TV Episodes or Songs.
+*   **Granular Rating System (1000-point scale):** Go beyond 5 stars. Rate media based on specific categories (e.g., Gameplay, Graphics, and Story for games; Pacing, Acting, and Plot for movies).
+*   **Stunning Visualizations:**
+    *   🕸️ **Digital Fingerprint (Spider Charts):** Watch your rating profile morph in real-time as you drag the sliders.
+    *   🔥 **Global Heatmap:** A GitHub-style contribution calendar mapping your daily media consumption over the last year.
+    *   🏆 **Completionism Medals:** Animated CSS badges for your gaming milestones (Silver, Gold, Platinum).
+    *   📈 **Season Progress Graphs:** Line charts plotting TV show quality episode by episode.
+*   **100% Offline & Private:** Powered by a local SQLite database (`critiq.db`). No accounts required.
 
-## 🚀 Easy Installation (Windows, Mac & Linux)
+## 🚀 Getting Started
 
-Critiq is designed to be plug-and-play. The only requirement is having [Node.js](https://nodejs.org/) (v20 or higher) installed on your computer.
+Critiq is cross-platform and will seamlessly run on Windows, macOS, and Linux.
 
-### 1. Download the Project
-Clone or download this repository as a `.zip` file and extract it.
+### Prerequisites
+*   [Node.js](https://nodejs.org/) (v20+ recommended)
+*   Git
 
-### 2. Configure APIs
-Rename the `.env.example` file to `.env` (or create one) in the `webapp` folder, and add your free TMDB API key:
-```env
-TMDB_API_KEY="your_tmdb_api_key_here"
-```
+### Installation
 
-### 3. Run with 1-Click
-Navigate into the `webapp` folder and double-click the startup script for your operating system:
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/yourusername/critiq.git
+   cd critiq
+   ```
 
-- **Windows:** Double-click `start.bat`
-- **Mac / Linux:** Run `start.sh` in your terminal (or double-click it if your system allows running shell scripts).
+2. **Run the App:**
+   We've included automated scripts that will install dependencies, set up the local database, and launch the application for you.
 
-*The script will automatically install dependencies, initialize your local database, start the server, and open your browser at `http://localhost:3000`!*
+   *   **Windows:** Double-click on `start.bat`
+   *   **Linux / macOS:** Run the bash script in your terminal:
+       ```bash
+       chmod +x start.sh
+       ./start.sh
+       ```
 
-## 🛠️ Tech Stack
+*(Note: The first launch might take a minute as it downloads npm packages and initializes the SQLite database).*
 
-- **Framework:** [Next.js](https://nextjs.org/) (App Router, Server Actions)
-- **Database:** SQLite (Local) via [Prisma ORM](https://www.prisma.io/)
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/) & Lucide React
-- **Data Visualization:** Recharts
+## 🛠️ Built With
 
-## 👥 Contributing
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-## 📄 License
-[MIT](https://choosealicense.com/licenses/mit/)
+*   [Next.js App Router](https://nextjs.org/) - UI & React Framework
+*   [Electron](https://www.electronjs.org/) - Desktop Native Wrapper
+*   [Tailwind CSS](https://tailwindcss.com/) - Styling & Animations
+*   [Prisma](https://www.prisma.io/) & SQLite - Local Database
+*   [Recharts](https://recharts.org/) - Data Visualizations
