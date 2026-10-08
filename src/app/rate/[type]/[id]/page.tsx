@@ -3,13 +3,13 @@ import { getMediaDetails } from "@/app/actions/tmdb";
 import { getMusicTrackDetails, getAlbumTracks } from "@/app/actions/music";
 import { getBookDetails } from "@/app/actions/books";
 import { getGameDetails } from "@/app/actions/games";
-import { getCommunityStatsDetailed } from "@/app/actions/ratings";
+import { getCommunityStatsDetailed, getUserRating } from "@/app/actions/ratings";
 import { RatingForm } from "@/components/RatingForm";
 import { WikidataTags } from "@/components/WikidataTags";
 import { CommunityStatsPanel } from "@/components/CommunityStatsPanel";
 import { CastCrew } from "@/components/CastCrew";
 
-export default async function RatePage({ params }: { params: Promise<{ type: 'movie'|'tv'|'track'|'album'|'book'|'game', id: string }> }) {
+export default async function RatePage({ params }: { params: Promise<{ type: string, id: string }> }) {
   const { type, id } = await params;
   
   let media;
@@ -20,6 +20,7 @@ export default async function RatePage({ params }: { params: Promise<{ type: 'mo
 
   let tags: string[] = [];
   const communityStats = await getCommunityStatsDetailed(type, id);
+  const userRating = await getUserRating(type as any, id);
 
   if (type === 'track') {
     media = await getMusicTrackDetails(id);
@@ -53,7 +54,7 @@ export default async function RatePage({ params }: { params: Promise<{ type: 'mo
     if ((typeof media?.raw_metadata === "string" ? JSON.parse(media.raw_metadata) : (media?.raw_metadata || {}))?.enriched_developer) tags.push(`Desarrollador: ${(typeof media?.raw_metadata === "string" ? JSON.parse(media.raw_metadata) : (media?.raw_metadata || {})).enriched_developer}`);
     if ((typeof media?.raw_metadata === "string" ? JSON.parse(media.raw_metadata) : (media?.raw_metadata || {}))?.enriched_genre) tags.push(`Género: ${(typeof media?.raw_metadata === "string" ? JSON.parse(media.raw_metadata) : (media?.raw_metadata || {})).enriched_genre}`);
   } else {
-    media = await getMediaDetails(id, type);
+    media = await getMediaDetails(id, type as 'movie' | 'tv');
     posterUrl = `https://image.tmdb.org/t/p/w780${media.poster_path}`;
     title = media.title || media.name;
     year = new Date(media.release_date || media.first_air_date).getFullYear().toString();
@@ -130,7 +131,7 @@ export default async function RatePage({ params }: { params: Promise<{ type: 'mo
           </header>
           
           {type !== 'album' && (
-            <RatingForm type={type as any} mediaId={id} mediaData={media} />
+            <RatingForm type={type as any} mediaId={id} mediaData={media} initialData={userRating} />
           )}
         </div>
       </div>

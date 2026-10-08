@@ -4,21 +4,21 @@
 import { useState, useEffect, useMemo } from "react";
 import { getTvSeasonDetails } from "@/app/actions/tmdb";
 import { saveEpisodeRating } from "@/app/actions/episodes";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { Loader2, Check, Save } from "lucide-react";
 
 const SCORE_COLORS = [
-  [239, 68, 68],   // 0: Rojo oscuro
-  [249, 115, 22],  // 1: Naranja oscuro
-  [249, 168, 21],  // 2: Naranja
-  [234, 179, 8],   // 3: Amarillo oscuro
-  [253, 224, 71],  // 4: Amarillo
-  [163, 230, 53],  // 5: Lima
-  [34, 197, 94],   // 6: Verde
-  [16, 185, 129],  // 7: Esmeralda
-  [6, 182, 212],   // 8: Cian
-  [59, 130, 246],  // 9: Azul
-  [37, 99, 235]    // 10: Azul profundo
+  [75, 85, 99],    // 0: Gris Oscuro
+  [156, 163, 175], // 1: Gris
+  [200, 130, 150], // 2: Rosa apagado
+  [255, 255, 255], // 3: Blanco
+  [249, 115, 22],  // 4: Naranja
+  [239, 68, 68],   // 5: Rojo
+  [168, 85, 247],  // 6: Morado
+  [234, 179, 8],   // 7: Amarillo Mostaza
+  [59, 130, 246],  // 8: Azul
+  [0, 229, 255],   // 9: Aqua Brillante
+  [34, 197, 94]    // 10: Verde
 ];
 
 function getColorForScore(score: number | undefined) {
@@ -106,6 +106,40 @@ export function SeasonChartUI({ tmdbId, seasons, pastRatings }: { tmdbId: string
     return data;
   }, [ratings]);
 
+  const seasonDeltas = useMemo(() => {
+    const seasonTotals: Record<number, { sum: number; count: number }> = {};
+    Object.keys(ratings).forEach(key => {
+      const match = key.match(/S(\d+)E(\d+)/);
+      if (match) {
+        const s = parseInt(match[1]);
+        if (!seasonTotals[s]) seasonTotals[s] = { sum: 0, count: 0 };
+        seasonTotals[s].sum += ratings[key];
+        seasonTotals[s].count += 1;
+      }
+    });
+
+    const seasonAvgs: Record<number, number> = {};
+    Object.keys(seasonTotals).forEach(s => {
+      seasonAvgs[parseInt(s)] = seasonTotals[parseInt(s)].sum / seasonTotals[parseInt(s)].count;
+    });
+
+    const sortedSeasons = Object.keys(seasonAvgs).map(Number).sort((a,b) => a-b);
+    const deltas = [];
+    for (let i = 1; i < sortedSeasons.length; i++) {
+      const prev = sortedSeasons[i-1];
+      const curr = sortedSeasons[i];
+      const delta = seasonAvgs[curr] - seasonAvgs[prev];
+      deltas.push({
+        name: `T${prev} → T${curr}`,
+        delta: parseFloat(delta.toFixed(2)),
+        isPositive: delta >= 0
+      });
+    }
+    return deltas;
+  }, [ratings]);
+
+
+
   const CustomDot = (props: any) => {
     const { cx, cy, payload } = props;
     if (cx == null || cy == null) return null;
@@ -123,6 +157,30 @@ export function SeasonChartUI({ tmdbId, seasons, pastRatings }: { tmdbId: string
   const seriesAverage = ratedEpisodes.length > 0 
     ? (ratedEpisodes.reduce((a, b) => a + b, 0) / ratedEpisodes.length).toFixed(2)
     : "0.00";
+
+  // Dynamic gradient calculation
+  const dynamicGradientStops = useMemo(() => {
+    if (chartData.length === 0) return <stop offset="0%" stopColor="#fff" />;
+    const minScore = Math.min(...chartData.map(d => d.score));
+    const maxScore = Math.max(...chartData.map(d => d.score));
+    const diff = maxScore - minScore;
+
+    const stops = [];
+    if (diff === 0) {
+      stops.push(<stop key="min" offset="0%" stopColor={getColorForScore(minScore)} />);
+      stops.push(<stop key="max" offset="100%" stopColor={getColorForScore(minScore)} />);
+    } else {
+      stops.push(<stop key="min" offset="0%" stopColor={getColorForScore(minScore)} />);
+      for (let s = Math.ceil(minScore); s <= Math.floor(maxScore); s++) {
+        if (s > minScore && s < maxScore) {
+          const pct = ((s - minScore) / diff) * 100;
+          stops.push(<stop key={s} offset={`${pct}%`} stopColor={getColorForScore(s)} />);
+        }
+      }
+      stops.push(<stop key="max" offset="100%" stopColor={getColorForScore(maxScore)} />);
+    }
+    return stops;
+  }, [chartData]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -166,11 +224,7 @@ export function SeasonChartUI({ tmdbId, seasons, pastRatings }: { tmdbId: string
                 <LineChart data={chartData}>
                   <defs>
                     <linearGradient id="scoreGradient" x1="0" y1="1" x2="0" y2="0">
-                      <stop offset="0%" stopColor="rgb(239, 68, 68)" />
-                      <stop offset="25%" stopColor="rgb(249, 168, 21)" />
-                      <stop offset="50%" stopColor="rgb(163, 230, 53)" />
-                      <stop offset="75%" stopColor="rgb(16, 185, 129)" />
-                      <stop offset="100%" stopColor="rgb(37, 99, 235)" />
+                      {dynamicGradientStops}
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
@@ -270,6 +324,46 @@ export function SeasonChartUI({ tmdbId, seasons, pastRatings }: { tmdbId: string
           )}
         </div>
       </div>
+
+{/* VALLE DE LA MUERTE (Delta Chart) */}
+          {seasonDeltas.length > 0 && (
+            <div className="glass-card p-6 h-[250px] flex flex-col relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/10 blur-[80px] rounded-full pointer-events-none group-hover:bg-red-500/20 transition-all duration-700" />
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-green-500/10 blur-[80px] rounded-full pointer-events-none group-hover:bg-green-500/20 transition-all duration-700" />
+              
+              <div className="flex items-center justify-between mb-4 z-10">
+                <div>
+                  <h3 className="text-xl font-black text-white flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-400"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    El Valle de la Muerte
+                  </h3>
+                  <p className="text-xs text-neutral-400 font-bold tracking-widest uppercase mt-1">Fluctuación de Calidad entre Temporadas</p>
+                </div>
+              </div>
+
+              <div className="flex-1 z-10 w-full min-h-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={seasonDeltas} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                    <XAxis dataKey="name" stroke="rgba(255,255,255,0.3)" fontSize={11} tickMargin={10} axisLine={false} tickLine={false} />
+                    <YAxis stroke="rgba(255,255,255,0.3)" fontSize={11} axisLine={false} tickLine={false} />
+                    <Tooltip 
+                      cursor={{fill: 'rgba(255,255,255,0.05)'}}
+                      contentStyle={{ backgroundColor: 'rgba(0,0,0,0.9)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px' }}
+                      itemStyle={{ color: '#fff', fontWeight: 'bold' }}
+                      formatter={(value: any) => [`${value > 0 ? '+' : ''}${value}`, 'Delta']}
+                    />
+                    <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" strokeWidth={2} />
+                    <Bar dataKey="delta" radius={[4, 4, 4, 4]} maxBarSize={60}>
+                      {seasonDeltas.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.isPositive ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
 
       {/* Heatmap Table */}
       <div className="glass-card p-6 overflow-x-auto custom-scrollbar">

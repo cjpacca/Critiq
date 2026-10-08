@@ -1,10 +1,11 @@
 import Link from 'next/link';
-import { Home, Tv, Film, Gamepad2, Music, BookOpen, Disc, User, Search, ChevronLeft, ChevronRight,  } from 'lucide-react';
+import { Home, Tv, Film, Gamepad2, Music, BookOpen, Disc, User, Search, ChevronLeft, ChevronRight, Trophy,  } from 'lucide-react';
 
 export function Sidebar({ isCollapsed, setIsCollapsed }: { isCollapsed: boolean, setIsCollapsed: (val: boolean) => void }) {
   const links = [
     { name: 'Inicio', href: '/', icon: Home },
     { name: 'Buscar', href: '/search', icon: Search },
+    { name: 'Tops (Rankings)', href: '/tops', icon: Trophy },
     { name: 'Series', href: '/series', icon: Tv },
     { name: 'Películas', href: '/movies', icon: Film },
     { name: 'Videojuegos', href: '/games', icon: Gamepad2 },

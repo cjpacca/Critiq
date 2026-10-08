@@ -1,4 +1,5 @@
-import { LucideIcon, Star } from "lucide-react";
+import { LucideIcon, Star, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export interface RankingItem {
   id: string;
@@ -15,9 +16,10 @@ interface RankingColumnProps {
   color: { text: string; border: string; bg: string };
   items: RankingItem[];
   imageClass?: string;
+  typeKey?: string;
 }
 
-export function RankingColumn({ title, icon: Icon, color, items, imageClass = "w-16 h-24 rounded-xl" }: RankingColumnProps) {
+export function RankingColumn({ title, icon: Icon, color, items, imageClass = "w-16 h-24 rounded-xl", typeKey }: RankingColumnProps) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-3">
@@ -52,15 +54,25 @@ export function RankingColumn({ title, icon: Icon, color, items, imageClass = "w
                 <div className="flex-1 overflow-hidden">
                   <h4 className="text-lg font-extrabold text-white mb-1 drop-shadow-md leading-tight truncate">{item.title}</h4>
                   {item.subtitle && <p className="text-xs text-neutral-400 mb-2 truncate">{item.subtitle}</p>}
-                  <div className={`flex items-center gap-2 bg-black/50 backdrop-blur-md w-fit px-3 py-1 rounded-full border border-white/10 shadow-inner ${color.text}`}>
-                    <Star className="fill-current" size={14} />
-                    <span className="font-black font-mono text-sm">{item.score} <span className="text-xs opacity-60">/ 1000</span></span>
+                  <div className="flex items-baseline gap-1 mt-1">
+                    <span className={`text-2xl font-black ${color.text} drop-shadow-[0_0_8px_rgba(255,255,255,0.1)] leading-none tracking-tighter`}>{item.score}</span>
+                    <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">/ 1000</span>
                   </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
+      )}
+      
+      {typeKey && items.length > 0 && (
+        <Link 
+          href={`/tops?tab=${typeKey}`}
+          className={`mt-2 flex items-center justify-between p-4 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 transition-colors group`}
+        >
+          <span className={`font-bold text-sm text-neutral-400 group-hover:text-white transition-colors`}>Ver ranking completo</span>
+          <ArrowRight size={16} className={`${color.text} transform group-hover:translate-x-1 transition-transform`} />
+        </Link>
       )}
     </div>
   );

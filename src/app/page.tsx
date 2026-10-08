@@ -1,7 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 import { Film, Tv, Gamepad2, Music, BookOpen, Star } from "lucide-react";
-import { RankingColumn } from "@/components/RankingColumn";
+import { VitrinaDorada } from "@/components/VitrinaDorada";
+import { GalaxiaChart } from "@/components/GalaxiaChart";
 import { ActivityHeatmap } from "@/components/ActivityHeatmap";
 
 export const revalidate = 0; // Datos frescos siempre
@@ -38,6 +39,23 @@ export default async function Home() {
     prisma.episodeRating.findMany({ select: { createdAt: true } }),
     prisma.albumTrackRating.findMany({ select: { createdAt: true } })
   ]);
+
+
+  const [allMovieRatings, allSeriesRatings, allGameRatings, allBookRatings, allMusicRatings] = await Promise.all([
+    prisma.movieRating.findMany({ select: { movieId: true, totalScore: true, createdAt: true, movie: { select: { title: true, posterUrl: true } } } }),
+    prisma.seriesRating.findMany({ select: { seriesId: true, totalScore: true, createdAt: true, series: { select: { title: true, posterUrl: true } } } }),
+    prisma.gameRating.findMany({ select: { gameId: true, totalScore: true, createdAt: true, game: { select: { title: true, posterUrl: true } } } }),
+    prisma.bookRating.findMany({ select: { bookId: true, totalScore: true, createdAt: true, book: { select: { title: true, posterUrl: true } } } }),
+    prisma.musicRating.findMany({ select: { musicId: true, totalScore: true, createdAt: true, music: { select: { title: true, posterUrl: true } } } }),
+  ]);
+
+  const galaxyData = [
+    ...allMovieRatings.map(r => ({ id: r.movieId, type: 'movies', title: r.movie.title, score: r.totalScore, date: r.createdAt.getTime(), poster: r.movie.posterUrl ? `https://image.tmdb.org/t/p/w300${r.movie.posterUrl}` : '' })),
+    ...allSeriesRatings.map(r => ({ id: r.seriesId, type: 'series', title: r.series.title, score: r.totalScore, date: r.createdAt.getTime(), poster: r.series.posterUrl ? `https://image.tmdb.org/t/p/w300${r.series.posterUrl}` : '' })),
+    ...allGameRatings.map(r => ({ id: r.gameId, type: 'games', title: r.game.title, score: r.totalScore, date: r.createdAt.getTime(), poster: r.game.posterUrl || "" })),
+    ...allBookRatings.map(r => ({ id: r.bookId, type: 'books', title: r.book.title, score: r.totalScore, date: r.createdAt.getTime(), poster: r.book.posterUrl || "" })),
+    ...allMusicRatings.map(r => ({ id: r.musicId, type: 'music', title: r.music.title, score: r.totalScore, date: r.createdAt.getTime(), poster: r.music.posterUrl || "" })),
+  ];
 
   const allDates = [...mDates, ...sDates, ...gDates, ...bDates, ...muDates, ...epDates, ...trDates];
   const activityData = allDates.map(d => ({ date: d.createdAt.toISOString(), count: 1 }));
@@ -123,77 +141,93 @@ export default async function Home() {
         })}
       </section>
 
+      {/* Galaxia Bubble Chart */}
+      <section className="mb-8 w-full">
+        <GalaxiaChart data={galaxyData} />
+      </section>
+
       {/* Heatmap Global */}
       <section className="mb-8 w-full">
         <ActivityHeatmap activityData={activityData} />
       </section>
 
-      {/* Leaderboards Espectaculares */}
-      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5 gap-8">
-        <RankingColumn 
-          title="Top Películas" 
-          icon={Film} 
-          color={mediaColors.movies} 
-          items={topMovies.map(m => ({
-            id: m.id,
-            title: m.movie.title,
-            poster: `https://image.tmdb.org/t/p/w300${m.movie.posterUrl}`,
-            backdrop: (m.movie.raw_metadata as any)?.backdrop_path ? `https://image.tmdb.org/t/p/w780${(m.movie.raw_metadata as any).backdrop_path}` : null,
-            score: m.totalScore
-          }))}
-        />
-        <RankingColumn 
-          title="Top Series" 
-          icon={Tv} 
-          color={mediaColors.series} 
-          items={topSeries.map(s => ({
-            id: s.id,
-            title: s.series.title,
-            poster: `https://image.tmdb.org/t/p/w300${s.series.posterUrl}`,
-            backdrop: (s.series.raw_metadata as any)?.backdrop_path ? `https://image.tmdb.org/t/p/w780${(s.series.raw_metadata as any).backdrop_path}` : null,
-            score: s.totalScore
-          }))}
-        />
-        <RankingColumn 
-          title="Top Canciones" 
-          icon={Music} 
-          color={mediaColors.music} 
-          imageClass="w-16 h-16 rounded-full aspect-square"
-          items={topMusic.map(m => ({
-            id: m.id,
-            title: m.music.title,
-            subtitle: m.music.artist,
-            poster: m.music.posterUrl || "",
-            score: m.totalScore
-          }))}
-        />
-        <RankingColumn 
-          title="Top Libros" 
-          icon={BookOpen} 
-          color={mediaColors.books} 
-          imageClass="w-16 h-24 rounded-md aspect-[2/3]"
-          items={topBooks.map(b => ({
-            id: b.id,
-            title: b.book.title,
-            subtitle: b.book.author,
-            poster: b.book.posterUrl || "",
-            score: b.totalScore
-          }))}
-        />
-      
-        <RankingColumn 
-          title="Top Juegos" 
-          icon={Gamepad2} 
-          color={mediaColors.games} 
-          imageClass="w-16 h-24 rounded-md aspect-[3/4]"
-          items={topGames.map(g => ({
-            id: g.id,
-            title: g.game.title,
-            poster: g.game.posterUrl || "",
-            score: g.totalScore
-          }))}
-        />
-      </section>
+            {/* Vitrina Dorada (Reemplaza los RankingColumns) */}
+      <VitrinaDorada 
+        categories={[
+          {
+            id: 'movies',
+            type: 'movie',
+            title: 'Top Películas',
+            icon: Film,
+            color: mediaColors.movies,
+            items: topMovies.map(m => ({
+              id: m.movie.tmdbId.toString(),
+              title: m.movie.title,
+              poster: `https://image.tmdb.org/t/p/w300${m.movie.posterUrl}`,
+              backdrop: (m.movie.raw_metadata as any)?.backdrop_path ? `https://image.tmdb.org/t/p/w780${(m.movie.raw_metadata as any).backdrop_path}` : null,
+              score: m.totalScore
+            }))
+          },
+          {
+            id: 'series',
+            type: 'tv',
+            title: 'Top Series',
+            icon: Tv,
+            color: mediaColors.series,
+            items: topSeries.map(s => ({
+              id: s.series.tmdbId.toString(),
+              title: s.series.title,
+              poster: `https://image.tmdb.org/t/p/w300${s.series.posterUrl}`,
+              backdrop: (s.series.raw_metadata as any)?.backdrop_path ? `https://image.tmdb.org/t/p/w780${(s.series.raw_metadata as any).backdrop_path}` : null,
+              score: s.totalScore
+            }))
+          },
+          {
+            id: 'games',
+            type: 'game',
+            title: 'Top Juegos',
+            icon: Gamepad2,
+            color: mediaColors.games,
+            imageClass: "w-20 h-28 aspect-[3/4] rounded-lg",
+            items: topGames.map(g => ({
+              id: g.game.rawgId,
+              title: g.game.title,
+              poster: g.game.posterUrl || "",
+              score: g.totalScore
+            }))
+          },
+          {
+            id: 'books',
+            type: 'book',
+            title: 'Top Libros',
+            icon: BookOpen,
+            color: mediaColors.books,
+            imageClass: "w-20 h-28 aspect-[2/3] rounded-lg",
+            items: topBooks.map(b => ({
+              id: b.book.googleId,
+              title: b.book.title,
+              subtitle: b.book.author,
+              poster: b.book.posterUrl || "",
+              score: b.totalScore
+            }))
+          },
+          {
+            id: 'music',
+            type: 'track',
+            title: 'Top Canciones',
+            icon: Music,
+            color: mediaColors.music,
+            imageClass: "w-24 h-24 rounded-full aspect-square",
+            items: topMusic.map(m => ({
+              id: m.music.spotifyId,
+              title: m.music.title,
+              subtitle: m.music.artist,
+              poster: m.music.posterUrl || "",
+              score: m.totalScore
+            }))
+          }
+        ]} 
+      />
 
     </div>
   );

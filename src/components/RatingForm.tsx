@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Loader2, Award, Trophy, Crown } from "lucide-react";
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
+import { Radar, RadarChart, LineChart, Line, CartesianGrid, XAxis, YAxis, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
 import { useRouter } from "next/navigation";
 import { saveRating } from "@/app/actions/ratings";
 
@@ -68,16 +68,19 @@ const GAME_CATEGORIES = [
   { id: "ia", label: "IA", max: 50 },
 ];
 
-export function RatingForm({ type, mediaId, mediaData }: { type: 'movie'|'tv'|'track'|'book'|'game', mediaId: string, mediaData: any }) {
+export function RatingForm({ type, mediaId, mediaData, initialData }: { type: 'movie'|'tv'|'track'|'book'|'game', mediaId: string, mediaData: any, initialData?: any }) {
   const router = useRouter();
   
   const categories = type === 'movie' ? MOVIE_CATEGORIES : type === 'tv' ? TV_CATEGORIES : type === 'track' ? MUSIC_CATEGORIES : type === 'game' ? GAME_CATEGORIES : BOOK_CATEGORIES;
   const accentColor = type === 'movie' ? 'accent-purple-500' : type === 'tv' ? 'accent-blue-500' : type === 'track' ? 'accent-yellow-500' : type === 'game' ? 'accent-green-500' : 'accent-orange-500';
   const buttonColor = type === 'movie' ? 'from-purple-600 to-pink-600' : type === 'tv' ? 'from-blue-600 to-cyan-600' : type === 'track' ? 'from-yellow-600 to-orange-600' : type === 'game' ? 'from-green-600 to-emerald-600' : 'from-orange-600 to-amber-600';
   
-  const [scores, setScores] = useState<Record<string, number>>(
-    categories.reduce((acc, cat) => ({ ...acc, [cat.id]: Math.floor(cat.max / 2) }), {})
-  );
+  const [scores, setScores] = useState<Record<string, number>>(() => {
+    if (initialData) {
+      return categories.reduce((acc, cat) => ({ ...acc, [cat.id]: initialData[cat.id] ?? Math.floor(cat.max / 2) }), {});
+    }
+    return categories.reduce((acc, cat) => ({ ...acc, [cat.id]: Math.floor(cat.max / 2) }), {});
+  });
   const [review, setReview] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -137,6 +140,19 @@ export function RatingForm({ type, mediaId, mediaData }: { type: 'movie'|'tv'|'t
     A: ((scores[cat.id] || 0) / cat.max) * 100,
     fullMark: 100
   }));
+
+  const heartbeatData = type === 'book' ? categories.flatMap((cat) => {
+    const val = ((scores[cat.id] || 0) / cat.max) * 100;
+    // ECG P-QRS-T complex pattern
+    return [
+      { name: '', value: 10, category: cat.label, actualScore: val },
+      { name: '', value: 5, category: cat.label, actualScore: val },
+      { name: cat.label, value: Math.max(15, val), isPeak: true, category: cat.label, actualScore: val },
+      { name: '', value: -5, category: cat.label, actualScore: val },
+      { name: '', value: 12, category: cat.label, actualScore: val },
+      { name: '', value: 10, category: cat.label, actualScore: val },
+    ];
+  }).concat([{ name: '', value: 10, category: '', actualScore: 0 }]) : [];
 
   const colorHex = type === 'movie' ? '#a855f7' : type === 'tv' ? '#3b82f6' : type === 'track' ? '#eab308' : type === 'game' ? '#22c55e' : '#f97316';
 
@@ -234,34 +250,68 @@ export function RatingForm({ type, mediaId, mediaData }: { type: 'movie'|'tv'|'t
         {/* Radar Chart (Spider Chart) */}
         <div className="w-full xl:w-[450px] aspect-square xl:aspect-auto bg-black/40 border border-white/5 rounded-3xl flex items-center justify-center p-4 shadow-inner relative overflow-hidden group">
           <div className="absolute top-4 left-5 z-10">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-neutral-500 group-hover:text-white transition-colors">Huella Digital (Spider Chart)</h4>
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-neutral-500 group-hover:text-white transition-colors">{type === "book" ? "Lectrocardiograma (Heartbeat Chart)" : "Huella Digital (Spider Chart)"}</h4>
           </div>
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-white/5 mix-blend-overlay pointer-events-none" />
           
           <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-            <RadarChart cx="50%" cy="50%" outerRadius="65%" data={radarData}>
-              <PolarGrid stroke="rgba(255,255,255,0.05)" />
-              <PolarAngleAxis 
-                dataKey="subject" 
-                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 'bold' }} 
-              />
-              <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-              <RechartsTooltip 
-                contentStyle={{ backgroundColor: 'rgba(0,0,0,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', backdropFilter: 'blur(10px)' }}
-                itemStyle={{ color: colorHex, fontWeight: 'black', fontSize: '16px' }}
-                formatter={(value: any) => [`${Math.round(value)}%`, 'Fuerza del atributo']}
-                labelStyle={{ display: 'none' }}
-              />
-              <Radar 
-                name="Fuerza" 
-                dataKey="A" 
-                stroke={colorHex} 
-                strokeWidth={3}
-                fill={colorHex} 
-                fillOpacity={0.25} 
-                activeDot={{ r: 6, fill: '#fff', stroke: colorHex, strokeWidth: 2 }}
-              />
-            </RadarChart>
+            {type === 'book' ? (
+              <LineChart data={heartbeatData} margin={{ top: 20, right: 20, bottom: 20, left: -20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(249, 115, 22, 0.05)" vertical={false} />
+                <XAxis dataKey="name" stroke="rgba(255,255,255,0.2)" fontSize={9} tickMargin={10} axisLine={false} tickLine={false} interval={5} />
+                <YAxis domain={[-10, 110]} hide={true} />
+                <RechartsTooltip 
+                  cursor={{ stroke: 'rgba(249, 115, 22, 0.2)', strokeWidth: 2, strokeDasharray: '5 5' }}
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      if (!data.isPeak) return null; // Solo mostramos tooltip en los picos reales
+                      return (
+                        <div className="bg-black/95 border border-white/10 p-3 rounded-xl shadow-2xl backdrop-blur-md">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">{data.category}</p>
+                          <p className="text-xl font-black" style={{ color: colorHex }}>{Math.round(data.actualScore)}%</p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Line 
+                  type="linear" 
+                  dataKey="value" 
+                  stroke={colorHex} 
+                  strokeWidth={3} 
+                  dot={false}
+                  activeDot={{ r: 6, fill: '#000', stroke: colorHex, strokeWidth: 3 }}
+                  style={{ filter: `drop-shadow(0 0 8px ${colorHex})` }}
+                  animationDuration={2000}
+                />
+              </LineChart>
+            ) : (
+              <RadarChart cx="50%" cy="50%" outerRadius="65%" data={radarData}>
+                <PolarGrid stroke="rgba(255,255,255,0.05)" />
+                <PolarAngleAxis 
+                  dataKey="subject" 
+                  tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 'bold' }} 
+                />
+                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                <RechartsTooltip 
+                  contentStyle={{ backgroundColor: 'rgba(0,0,0,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', backdropFilter: 'blur(10px)' }}
+                  itemStyle={{ color: colorHex, fontWeight: 'black', fontSize: '16px' }}
+                  formatter={(value: any) => [`${Math.round(value)}%`, 'Fuerza del atributo']}
+                  labelStyle={{ display: 'none' }}
+                />
+                <Radar 
+                  name="Fuerza" 
+                  dataKey="A" 
+                  stroke={colorHex} 
+                  strokeWidth={3}
+                  fill={colorHex} 
+                  fillOpacity={0.25} 
+                  activeDot={{ r: 6, fill: '#fff', stroke: colorHex, strokeWidth: 2 }}
+                />
+              </RadarChart>
+            )}
           </ResponsiveContainer>
         </div>
 
