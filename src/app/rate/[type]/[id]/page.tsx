@@ -101,16 +101,6 @@ export default async function RatePage({ params }: { params: Promise<{ type: str
             <CommunityStatsPanel stats={communityStats} type={type} />
             {(type === "movie" || type === "tv") && media.credits && <CastCrew credits={media.credits} creators={(media as any).created_by} />}
             
-            
-            {type === 'tv' && (
-              <Link 
-                href={`/seasonchart/${id}`} 
-                className="w-full bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-500/50 py-3 rounded-xl flex items-center justify-center gap-2 transition-all font-bold mt-4"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-                Ver Episodios
-              </Link>
-            )}
             {type === 'album' && (
               <Link 
                 href={`/trackgraph/${id}`} 
@@ -130,6 +120,16 @@ export default async function RatePage({ params }: { params: Promise<{ type: str
             <p className="text-neutral-400 text-lg">Asigna una puntuación granular para calcular la nota final sobre 1000.</p>
           </header>
           
+          {type === 'tv' && (
+            <Link 
+              href={`/seasonchart/${id}`} 
+              className="w-full bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-500/50 py-3 rounded-xl flex items-center justify-center gap-2 transition-all font-bold mb-8"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+              Ver Episodios
+            </Link>
+          )}
+
           {type !== 'album' && (
             <RatingForm type={type as any} mediaId={id} mediaData={media} initialData={userRating} />
           )}
